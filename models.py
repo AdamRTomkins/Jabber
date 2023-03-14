@@ -5,6 +5,8 @@ from pydantic import root_validator
 from pydantic_yaml import VersionedYamlModel
 from typing import List, Optional, Dict, Union, Literal, Any
 
+import streamlit as st
+
 import openai
 import re
 
@@ -55,7 +57,7 @@ class GenerateTextTask(TaskParams):
 
     def execute(self, requirements:ResourceRequirements, memory:Dict):
 
-        openai.api_key = "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"
+        openai.api_key = st.session_state.key
 
         messages = [{"role": "system", "content": self.primer}]
         for role, content in self.prompt.items():
@@ -71,7 +73,7 @@ class GenerativeShortSummary(TaskParams):
 
     def execute(self, requirements:ResourceRequirements, memory:Dict):
 
-        openai.api_key = "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"
+        openai.api_key = st.session_state.key
 
         messages = [{"role": "system", "content": self.primer}]
 
@@ -91,7 +93,7 @@ class GenerativeTitle(TaskParams):
 
     def execute(self, requirements:ResourceRequirements, memory:Dict):
 
-        openai.api_key = "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"
+        openai.api_key = st.session_state.key
 
         messages = [{"role": "system", "content": self.primer}]
 

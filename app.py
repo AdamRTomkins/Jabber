@@ -1,6 +1,7 @@
 # A bare bones UI for the Open AI Chat Completion used in ChatGPT
 # Created by Adam Tomkins
-
+import pydantic
+pydantic.class_validators._FUNCS.clear()
 
 import streamlit as st
 from config import state_variables
@@ -16,6 +17,7 @@ if key == "sk...":
     st.error("Please add a valid Open API Key in the Sidebar")
 
 else:
+    st.session_state.key = key
     openai.api_key = key
 
     for k,v in state_variables.items():

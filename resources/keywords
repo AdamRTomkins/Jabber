@@ -1,0 +1,71 @@
+version: 1.0.0
+name: Story and Translation With A Chararacter and a Location and Extracting Keywords
+description: Extending the basic with keywords
+tags: []
+slots:
+  characters:
+  - CHAR1
+  - CHAR2
+  properties:
+    LOCATION:
+    - Doctor
+    - Cafe
+    LANGUAGE:
+    - English
+    - French
+tasks:
+- generate_story:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters:
+      - CHAR1
+      - CHAR2
+      properties:
+      - LOCATION
+    required_outputs: []
+    type: GenerateTask
+    prompt:
+      user: Generate a Story about a child called {CHAR1.name} with {CHAR2.name} going
+        to a {LOCATION}
+    primer: You are a friendly assistant.
+- translate:
+    id: '1'
+    keep_output: true
+    required_slots:
+      properties:
+      - LANGUAGE
+    required_outputs:
+    - generate_story
+    type: GenerateTask
+    prompt:
+      assistant: 'Story: {MEMORY.generate_story}'
+      user: Please translate the above story into {LANGUAGE}
+    primer: You are a friendly assistant.
+- keywords:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters: []
+      properties: 
+        - LANGUAGE
+    required_outputs: 
+      - translate
+    type: GenerateTask
+    prompt:
+      user: What are the top ten keywords to know to understand the story "{MEMORY.translate}". Print the important keywords in {LANGUAGE} followed by their translation them into English.
+    primer: You are a friendly assistant.
+ - keyword_examples:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters: []
+      properties: 
+        - LANGUAGE
+    required_outputs: 
+      - keywords
+    type: GenerateTask
+    prompt:
+      system: "Keywords: {MEMORY.keywords}"
+      user: Use each keyword in an example sentence in {LANGUAGE}.
+    primer: You are a friendly assistant.

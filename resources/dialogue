@@ -1,0 +1,68 @@
+version: 1.0.0
+name: Dialoge Generation
+description: Simple Dialoge Generation
+tags: []
+slots:
+  characters:
+  - CHAR1
+  properties:
+    PERSON:
+    - Doctor
+    - Server
+    LOCATION:
+    - Doctor office
+    - Cafe
+    MOOD:
+    - Calm
+    - Friendly
+    - Impatient
+    - Curious
+    - Happy
+    - Furious
+    LANGUAGE:
+    - English
+    - French
+tasks:
+- dialogue:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters:
+      - CHAR1
+      properties:
+      - LOCATION
+      - MOOD
+      - PERSON
+      - LANGUAGE
+    required_outputs: []
+    type: GenerateTask
+    prompt:
+      user: Generate a back and forth Dialoge in {LANGUAGE} between a  {PERSON} and {CHAR1.name} at a {LOCATION}. The {PERSON} is in a {MOOD} Mood.
+    primer: You are a friendly assistant.
+- keywords:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters: []
+      properties: 
+        - LANGUAGE
+    required_outputs: 
+      - dialogue
+    type: GenerateTask
+    prompt:
+      user: What are the top ten {LANGUAGE} keywords to know to understand the dialog "{MEMORY.dialogue}". Print the important keywords in {LANGUAGE} followed by their translation in English.
+    primer: You are a friendly assistant.
+- keyword_examples:
+    id: '0'
+    keep_output: true
+    required_slots:
+      characters: []
+      properties: 
+        - LANGUAGE
+    required_outputs: 
+      - keywords
+    type: GenerateTask
+    prompt:
+      system: "Keywords: {MEMORY.keywords}"
+      user: Use each keyword in an example sentence in {LANGUAGE}.
+    primer: You are a friendly assistant.

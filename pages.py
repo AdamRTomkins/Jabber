@@ -38,7 +38,7 @@ def page_create_materials():
     resource = resources[resource_name]
     st.write(resource.description)
     with st.expander("Resource Config"):
-        st.write(resource)
+        st.text(resource.yaml())
 
     # 2. Extract the requirements
     # 3. Filfil the requirements
@@ -53,24 +53,22 @@ def page_create_materials():
             characters = st.session_state.database["characters"],
             available_tasks = []
         )
-        materials = generate_materials(workspace=workspace, resource=resource, requirements=requirements, name=mat_name, description=mat_description)
+        with st.spinner("Generating Material"):
+            materials = generate_materials(workspace=workspace, resource=resource, requirements=requirements, name=mat_name, description=mat_description)
 
-        st.write(materials.name)
-        st.write(materials.description)
-
-        for k,v in materials.data.items():
-            st.write(f"_{k}_")
-            st.write(f"{v}")
+        draw_material(materials)
 
         # 5. Save the Resource
         st.session_state.database["materials"].append(materials)
 
 
 def draw_character(character):
-    st.write(character)
+    for k,v in character.dict().items():
+        st.write(f"__{k}__ :  _{v}_")
 
 def draw_character_library():
-    st.subheader("Resource")
+    st.subheader("Characters")
+    st.info("A place to define and keep your Characters that can be used with any resource.")
 
     for c in st.session_state.database["characters"]:
         with st.expander(c.name):
@@ -88,7 +86,9 @@ def draw_character_library():
                 st.session_state.database["characters"].append(character)
 
 def draw_resource(resource):
-    st.write(resource)
+    st.info(resource.description)
+
+    st.code(resource.yaml())
 
 
 def draw_material(material):
@@ -96,7 +96,7 @@ def draw_material(material):
     st.info(material.description)
     for k,v in material.data.items():
         st.write(f"__{k.replace('_',' ').title()}__")
-        st.write(v)
+        st.write(v[-1])
 
 
 
