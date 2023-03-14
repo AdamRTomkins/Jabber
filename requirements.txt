@@ -1,0 +1,4 @@
+pydantic-yaml
+pyyaml
+streamlit
+openai
