@@ -35,4 +35,4 @@ else:
 
 
 
-st.info("Created by Adam Tomkins. Source Code: https://github.com/AdamRTomkins/StreamlitChatGPT")
+st.info("Created by The MicroFamily Inc.")
