@@ -4,22 +4,34 @@ from models import Character, Resource
 #
 adam = Character(
     name="adam",
-    likes=["Cats", "Dogs","Pies"],
+    likes=["Cats", "Dogs", "Pies"],
     dislikes=["Chocolate", "Bedtime"],
     personality="Shy",
+    gender="boy",
+    hair_colour="red",
+    eye_colour="blue",
+    wearing="a plaid shirt",
+    lives_in="the beach",
+    flair="a hammer",
 )
 
 nelly = Character(
     name="nelly",
     likes=["Cats", "Chocolate"],
     dislikes=["Whisky", "Programming"],
-    personality="Bold"
+    personality="Bold",
+    gender="girl",
+    hair_colour="dark brown",
+    eye_colour="brown",
+    wearing="a gray t-shirt",
+    lives_in="the woods",
+    flair="a black cat",
 )
 
-CHARACTERS = [adam,nelly]
+CHARACTERS = [adam, nelly]
 
 ## Steps
-ex_yml = """
+story = """
  version: 1.0.0
  name: Story and Translation With A Chararacter and a Location
  description: An example resource type
@@ -29,7 +41,7 @@ ex_yml = """
      - CHAR2
    properties:
      LOCATION: ["Doctor", "Cafe"]
-     LANGUAGE: ["English", "French"]
+     LANGUAGE: ["French", "English"]
  import_tasks:
      id: 123456
      name: translate
@@ -37,15 +49,17 @@ ex_yml = """
  tasks:
   - generate_story:
      id: 0
-     type: GenerateTask
+     type: GenerativeText
+     GenerativeText: GenerativeText
      prompt: 
-        user: "Generate a Story about a child called {CHAR1.name} with {CHAR1.name} going to a {LOCATION}"
+        user: "Generate a Story about a child called {CHAR1.name} with {CHAR2.name} going to a {LOCATION}"
      required_slots:
        characters : [CHAR1, CHAR2]
        properties : [LOCATION]
   - translate:
      id: 1
-     type: GenerateTask
+     type: GenerativeText
+     GenerativeText: GenerativeText
      prompt:
        assistant: "Story: {MEMORY.generate_story}" 
        user: "Please translate the above story into {LANGUAGE}"
@@ -57,21 +71,19 @@ ex_yml = """
   - summary:
      id: 2
      type: GenerateSummary
+     GenerativeShortSummary: GenerativeShortSummary
      required_outputs:
        - generate_story      
 
   - title:
      id: 2
-     type: GenerateTitle
+     type: GenerativeTitle
+     GenerativeTitle: GenerativeTitle
      required_outputs:
        - summary       
-"""    
-
-
-
+"""
 
 TASKS = []
 
-
 # Select a resource
-RESOURCES = [Resource.parse_raw(ex_yml)]
+RESOURCES = [Resource.parse_raw(story)]

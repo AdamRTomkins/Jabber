@@ -14,4 +14,3 @@ Please write 10 questions about the story, designed to test the understanding of
 flashcard_prompt = """Extract the top 10 words from the story, and give the word in English and its {LANGUAGE} translation"""
 
 title_prompt = "Create a short Title for the Story, suitable for Children"
-

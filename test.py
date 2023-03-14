@@ -1,7 +1,5 @@
 from models import *
-from resources import (
-    CHARACTERS
-)
+from resources import CHARACTERS
 
 from core_utils import *
 
@@ -61,7 +59,7 @@ ex_yml = """
      type: GenerateTitle
      required_outputs:
        - summary       
-"""    
+"""
 
 
 # Select a resource
@@ -74,8 +72,10 @@ requirements = fulfil_slots(resource=resource, workspace=workspace)
 # Validate that we have the right requirements.
 
 # Generate the Resource
-materials = generate_materials(workspace=workspace, resource=resource, requirements=requirements)
+materials = generate_materials(
+    workspace=workspace, resource=resource, requirements=requirements
+)
 
 
-for k,v in materials.items():
+for k, v in materials.items():
     print(f">>> {k}", v, sep="/n/n")
