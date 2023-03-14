@@ -112,7 +112,12 @@ def draw_resource_library():
             yaml = st.text_area("Resource YAML")
 
             if st.form_submit_button():
-                resource = Resource.parse_raw(yaml)
+                try:
+                    resource = Resource.parse_raw(yaml)
+                except Exception as e:
+                    st.info("Unable to parse the YAML file, please make sure it is valid with the [YAML Linter](https://www.yamllint.com/) ")
+                    with st.expander("Error"):
+                        st.write(e)
                 st.session_state.database["resources"].append(resource)
 
 
