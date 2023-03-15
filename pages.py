@@ -18,7 +18,7 @@ from data import (
 
 from prompts import *
 
-from models import Character, Resource, ResourceRequirements, Workspace
+from models import Character, Resource, ResourceRequirements, Workspace, Material
 from core_utils import generate_materials
 
 
@@ -87,9 +87,7 @@ def draw_character_library():
         "A place to define and keep your Characters that can be used with any resource."
     )
 
-    for c in st.session_state.database["characters"]:
-        with st.expander(c.name):
-            draw_character(c)
+    container = st.container()
 
     with st.expander("Create New Character"):
         with st.form("character_create"):
@@ -100,11 +98,38 @@ def draw_character_library():
                 "Personality", st.session_state.database["personality"]
             )
 
+            char_params = {}
+            char_fields = [
+                "gender",
+                "hair colour",
+                "eye colour",
+                "wearing",
+                "lives_in",
+                "flair",
+            ]
+            for char_field in char_fields:
+                char_params[char_field] = st.selectbox(
+                    char_field.title(), st.session_state.database[char_field]
+                )
+
+            gender = "girl"
+            hair_colour: str = "red"
+            eye_colour: str = "blue"
+            wearing: str = "a yellow dress"
+            lives_in: str = "the woods"
+            flair: str = "an umbrella"
+            personality: str
+
             if st.form_submit_button():
                 character = Character(
                     name=name, likes=likes, dislikes=dislikes, personality=personality
                 )
                 st.session_state.database["characters"].append(character)
+
+    with container:
+        for c in st.session_state.database["characters"]:
+            with st.expander(c.name):
+                draw_character(c)
 
 
 def draw_resource(resource):
@@ -296,7 +321,14 @@ def page_create_resource():
     st.subheader("Details")
 
     name = st.text_input("Name", "Your Resource Name")
+    if name == "Your Resource Name":
+        st.info("Please enter a meaningful name for your resource.")
+        return
+
     description = st.text_input("Name", "Your Resource Description")
+    if description == "Your Resource Description":
+        st.info("Please enter a meaningful name for your resource.")
+        return
 
     st.subheader("Properties")
 
@@ -314,22 +346,37 @@ def page_create_resource():
     )
 
     props = {}
-    c1, c2 = st.columns([1, 10])
-    with c2:
-        for prop in properties:
+
+    c1, c2, c3 = st.columns([1, 10, 2])
+    for prop in properties:
+        with c3:
+            if len(st.session_state.database.get("__" + prop, [])) == 0:
+                if st.button("Generate Examples", key="b" + prop):
+                    st.session_state.database["__" + prop] = generate_examples(prop)
+        with c2:
+            prop_name = prop
+            if "__" + prop in st.session_state.database:
+                prop = "__" + prop
+
             props[prop] = st_tags(
-                label=prop,
+                label=prop_name.title(),
                 text="Press enter to add more",
-                value=FIELDS.get(prop, []),
-                suggestions=FIELDS.get(prop, []),
-                maxtags=15,
+                value=st.session_state.database.get(prop, []),
+                suggestions=st.session_state.database.get(prop, []),
+                maxtags=100,
                 key=prop,
             )
 
     from models import Slots
 
+    # Clean out the nasty generated stuff
+    clean_props = {k: v for k, v in props.items() if k[:2] != "__"}
+    for k, v in props.items():
+        if k[:2] == "__":
+            clean_props[k[2:]] = v
+
     slots = Slots(
-        characters=[f"CHAR{i+1}" for i in range(num_characters)], properties=props
+        characters=[f"CHAR{i+1}" for i in range(num_characters)], properties=clean_props
     )
 
     task_show = st.container()
@@ -455,3 +502,74 @@ def page_create_resource():
                 "Unable to parse the YAML file, please make sure it is valid with the [YAML Linter](https://www.yamllint.com/) "
             )
             st.error(e)
+
+
+def generate_examples(field):
+    openai.api_key = st.session_state.key
+
+    messages = [{"role": "system", "content": "You are a friendly chat bot."}]
+
+    messages.extend(
+        [
+            {
+                "role": "user",
+                "content": f"Give me 50 examples of a {field.lower().replace('_',' ')}, formatted as a python list.",
+            }
+        ]
+    )
+    with st.spinner("Generating Suggestions"):
+        r = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
+        reply = r["choices"][0]["message"]["content"]
+        try:
+            the_list = reply.split("[")[1].split("]")[0].split(",")
+            the_list = [r.replace("'", "") for r in the_list]
+            the_list = [r.replace('"', "") for r in the_list]
+            the_list = [r.replace("\n", "") for r in the_list]
+            the_list = [r.strip() for r in the_list]
+            return the_list
+
+        except:
+            st.info("Unable to nicelu parse the list")
+            return []
+
+
+def draw_save_session():
+    t1, t2 = st.tabs(["Save Session", "Load Session"])
+    with t1:
+        st.subheader("Save Session")
+
+        fields = ["resources", "materials", "characters"]
+        to_save = {r: st.checkbox(r.title(), True) for r in fields}
+
+        backup = {}
+
+        for field, save in to_save.items():
+            if save:
+                backup[field] = [o.dict() for o in st.session_state.database[field]]
+
+        import json
+
+        st.download_button("Download Session Data", json.dumps(backup))
+
+    with t2:
+        st.subheader("Restore Session")
+
+        from io import StringIO
+
+        uploaded_file = st.file_uploader("Choose a Session File")
+        if uploaded_file is not None:
+            # To convert to a string based IO:
+            stringio = StringIO(uploaded_file.getvalue().decode("utf-8"))
+            data = json.loads(stringio.getvalue())
+
+            classes = {
+                "characters": Character,
+                "materials": Material,
+                "resources": Resource,
+            }
+
+            if st.button("Restore All"):
+                for k, b in data.items():
+                    converted = [classes[k](**d) for d in b]
+                    st.success(f"{len(converted)} {k} restored")
+                    st.session_state.database[k] = converted

@@ -311,6 +311,13 @@ def resolve_prompt(prompt: str, requirements: ResourceRequirements, memory: Dict
                 assert len(memory[features[1]]) > 0
                 replacements[r] = memory[features[1]][-1][default_field]
 
-        for k, v in replacements.items():
-            prompt = prompt.replace(k, v)
+        try:
+            for k, v in replacements.items():
+                prompt = prompt.replace(k, v)
+        except:
+            logger.info(k)
+            logger.info(v)
+            import pdb
+
+            pdb.set_trace()
     return prompt
