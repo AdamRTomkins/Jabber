@@ -6,9 +6,11 @@ from pydantic_yaml import VersionedYamlModel
 from typing import List, Optional, Dict, Union, Literal, Any
 
 import streamlit as st
-
+import logging
 import openai
 import re
+
+logger = logging.getLogger(__name__)
 
 
 class Material(BaseModel):
@@ -58,7 +60,7 @@ class TaskParams(YamlModel):
         extra = "forbid"
 
     def execute(self, requirements: ResourceRequirements, memory: Dict):
-        return self.id
+        return {"text": self.id}
 
 
 # TODO: How do we allow the user to pass in specific vartiables from their workspace, such as API Keys
@@ -84,7 +86,7 @@ class GenerateTextTask(TaskParams):
             )
 
         r = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
-        return r["choices"][0]["message"]["content"]
+        return {"text": r["choices"][0]["message"]["content"]}
 
 
 class GenerativeShortSummary(TaskParams):
@@ -98,8 +100,14 @@ class GenerativeShortSummary(TaskParams):
         messages = [{"role": "system", "content": self.primer}]
 
         for memory_content in self.required_outputs:
+            logger.info(memory.get(memory_content)[-1])
             messages.extend(
-                [{"role": "assistant", "content": memory.get(memory_content)[-1]}]
+                [
+                    {
+                        "role": "assistant",
+                        "content": memory.get(memory_content)[-1]["text"],
+                    }
+                ]
             )
 
         messages.extend(
@@ -112,7 +120,7 @@ class GenerativeShortSummary(TaskParams):
         )
 
         r = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
-        return r["choices"][0]["message"]["content"]
+        return {"text": r["choices"][0]["message"]["content"]}
 
 
 class GenerativeTitle(TaskParams):
@@ -128,7 +136,12 @@ class GenerativeTitle(TaskParams):
 
         for memory_content in self.required_outputs:
             messages.extend(
-                [{"role": "assistant", "content": memory.get(memory_content)[-1]}]
+                [
+                    {
+                        "role": "assistant",
+                        "content": memory.get(memory_content)[-1]["text"],
+                    }
+                ]
             )
 
         messages.extend(
@@ -141,7 +154,7 @@ class GenerativeTitle(TaskParams):
         )
 
         r = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages)
-        return r["choices"][0]["message"]["content"]
+        return {"text": r["choices"][0]["message"]["content"]}
 
 
 class GenerateImage(TaskParams):
@@ -150,12 +163,13 @@ class GenerateImage(TaskParams):
     image_prompt: str
 
     def execute(self, requirements: ResourceRequirements, memory: Dict):
+        prompt = resolve_prompt(self.image_prompt, requirements, memory)
         response = openai.Image.create(
-            prompt=resolve_prompt(self.image_prompt, requirements, memory),
+            prompt=prompt,
             n=1,
             size="256x256",
         )
-        return response["data"][0]["url"]
+        return {"image_url": response["data"][0]["url"], "text": prompt}
 
 
 class GenerateCharacterImage(TaskParams):
@@ -164,12 +178,13 @@ class GenerateCharacterImage(TaskParams):
     character_image_prompt: str = "A simple watercolour portrait of a {CHAR1.gender} called {CHAR1.name} with {CHAR1.hair_colour} hair, and {CHAR1.eye_colour} eyes, wearing a {CHAR1.wearing}, holding a {CHAR1.flair}, who lives in {CHAR1.lives_in}"
 
     def execute(self, requirements: ResourceRequirements, memory: Dict):
+        prompt = resolve_prompt(self.character_image_prompt, requirements, memory)
         response = openai.Image.create(
-            prompt=resolve_prompt(self.character_image_prompt, requirements, memory),
+            prompt=prompt,
             n=1,
             size="256x256",
         )
-        return response["data"][0]["url"]
+        return {"image_url": response["data"][0]["url"], "text": prompt}
 
 
 class LoadTask(TaskParams):
@@ -280,19 +295,22 @@ def resolve_prompt(prompt: str, requirements: ResourceRequirements, memory: Dict
         if len(features) == 2:
             # Resolve Memory Lookup
             if features[0] == "MEMORY":
+                default_field = "text"
                 assert len(memory[features[1]]) > 0
-                replacements[r] = memory[features[1]][-1]
+                replacements[r] = memory[features[1]][-1][default_field]
             # TODO: Improve Character Signification to not just be the default if its not memory
             else:
                 # Resolve Character Lookup
                 character = requirements.characters.get(features[0])
                 replacements[r] = getattr(character, features[1])
 
-        for k, v in replacements.items():
-            if type(v) is List:
-                if len(v) == 1:
-                    v = v[0]
-                v = ", ".join(v[:-2]) + " and " + v[-1]
-            prompt = prompt.replace(k, v)
+        if len(features) == 3:
+            # Resolve Memory Lookup
+            if features[0] == "MEMORY":
+                default_field = features[2]
+                assert len(memory[features[1]]) > 0
+                replacements[r] = memory[features[1]][-1][default_field]
 
+        for k, v in replacements.items():
+            prompt = prompt.replace(k, v)
     return prompt

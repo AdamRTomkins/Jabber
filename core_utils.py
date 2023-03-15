@@ -14,45 +14,6 @@ def fulfil_slots(resource: Resource, workspace: Workspace):
     return ResourceRequirements(characters=characters, properties=properties)
 
 
-def resolve_prompt(prompt: str, requirements: ResourceRequirements, memory: Dict):
-    """Resolve the Prompt Variables, replacing properties, characters and Memory call backs.
-
-    TODO: Improve and standardise how we separate characters and memory and properties
-    """
-
-    # Extract everything between {}
-    # split them by .
-    res = re.findall(r"\{.*?\}", prompt)
-    replacements = {}
-
-    for r in res:
-        text = r[1:-1]
-        features = text.split(".")
-
-        # For all the single ones, pull them out of properties
-        if len(features) == 1:
-            replacements[r] = requirements.properties.get(features[0])
-
-        # For the len twos:
-        # pull the first and getattr on the second.
-        # Characters
-        if len(features) == 2:
-            # Resolve Memory Lookup
-            if features[0] == "MEMORY":
-                assert len(memory[features[1]]) > 0
-                replacements[r] = memory[features[1]][-1]
-            # TODO: Improve Character Signification to not just be the default if its not memory
-            else:
-                # Resolve Character Lookup
-                character = requirements.characters.get(features[0])
-                replacements[r] = getattr(character, features[1])
-
-        for k, v in replacements.items():
-            print(k, v, memory.keys())
-            prompt = prompt.replace(k, v)
-    return prompt
-
-
 from collections import defaultdict
 
 

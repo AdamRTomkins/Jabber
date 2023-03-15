@@ -50,8 +50,8 @@ def page_create_materials():
 
     # 2. Extract the requirements
     # 3. Filfil the requirements
-    mat_name = st.text_input("Material Name")
-    mat_description = st.text_input("Material Description")
+    mat_name = st.text_input("Material Name", resource.name)
+    mat_description = st.text_input("Material Description", resource.description)
     requirements = extract_requirements(resource)
 
     if st.button("Generate"):
@@ -113,20 +113,28 @@ def draw_resource(resource):
     st.code(resource.yaml())
 
 
+from typing import Dict
+
+
+def material_mapper(section: Dict):
+    funcs = {"image_url": st.image, "text": st.write}
+
+    for k, v in section.items():
+        funcs.get(k, st.write)(v)
+
+
 def draw_material(material):
     st.subheader(material.name)
     st.info(material.description)
     for k, v in material.data.items():
         st.write(f"__{k.replace('_',' ').title()}__")
-        st.write(v[-1])
+        material_mapper(v[-1])
 
 
 def draw_resource_library():
     st.subheader("Resource Library")
 
-    for c in st.session_state.database["resources"]:
-        with st.expander(c.name):
-            draw_resource(c)
+    container = st.container()
 
     with st.expander("Create New Resource"):
         with st.form("resource_create"):
@@ -141,14 +149,33 @@ def draw_resource_library():
                         "Unable to parse the YAML file, please make sure it is valid with the [YAML Linter](https://www.yamllint.com/) "
                     )
                     st.error(e)
+    with container:
+        for c in st.session_state.database["resources"]:
+            with st.expander(c.name):
+                draw_resource(c)
 
 
 def draw_material_library():
     st.subheader("Material Library")
 
-    for c in st.session_state.database["materials"]:
-        with st.expander(c.name):
-            draw_material(c)
+    deleted = []
+    for i, c in enumerate(st.session_state.database["materials"]):
+        c1, c2 = st.columns([10, 2])
+        with c2:
+            if st.button("Delete"):
+                deleted.append(i)
+
+        with c1:
+            with st.expander(c.name):
+                if i in deleted:
+                    st.info("This Material has been removed")
+                draw_material(c)
+
+    st.session_state.database["materials"] = [
+        m
+        for i, m in enumerate(st.session_state.database["materials"])
+        if i not in deleted
+    ]
 
 
 def page_database():

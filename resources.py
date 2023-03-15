@@ -80,10 +80,35 @@ story = """
      type: GenerativeTitle
      GenerativeTitle: GenerativeTitle
      required_outputs:
-       - summary       
+       - summary
+"""
+
+char_gen = """
+version: 0.0.1
+name: Character Generator
+description: Generate an Image of your Character
+tags: []
+slots:
+  characters:
+  - CHAR1
+  properties: {}
+tasks:
+- gen character:
+    id: '123'
+    keep_output: true
+    required_slots:
+      characters:
+      - CHAR1
+      properties: []
+    required_outputs: []
+    type: GenerativeCharacterImage
+    GenerateCharacterImage: GenerateCharacterImage
+    character_image_prompt: A simple watercolour portrait of a {CHAR1.gender} called
+      {CHAR1.name} with {CHAR1.hair_colour} hair, and {CHAR1.eye_colour} eyes, wearing
+      a {CHAR1.wearing}, holding a {CHAR1.flair}, who lives in {CHAR1.lives_in}
 """
 
 TASKS = []
 
 # Select a resource
-RESOURCES = [Resource.parse_raw(story)]
+RESOURCES = [Resource.parse_raw(story), Resource.parse_raw(char_gen)]

@@ -29,8 +29,9 @@ else:
     pages = {
         # "Main":page_generate_story,
         # "Database":page_database,
+        "Characters Library": draw_character_library,
         "Resource Library": draw_resource_library,
-        "Material_Library": draw_material_library,
+        "Material Library": draw_material_library,
         "Create New Material": page_create_materials,
         "Create New Resource": page_create_resource,
     }
