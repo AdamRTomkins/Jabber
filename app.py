@@ -34,7 +34,7 @@ else:
         "Material Library": draw_material_library,
         "Create New Material": page_create_materials,
         "Create New Resource": page_create_resource,
-        "Save": draw_save_session,
+        "Export/Restore": draw_save_session,
     }
 
     sel_page = st.sidebar.selectbox("Page", pages.keys())
